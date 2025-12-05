@@ -1,10 +1,10 @@
-<project name="floreantpos" default="dist">
+<project name="casbahpos" default="dist">
 	<property name="src.dir" value="src"/>
 	<property name="out.dir" value="antbin"/>
 	<property name="dist.base" value="dist"/>
-	<property name="dist.dir" value="${dist.base}/floreantpos"/>
-	<property name="jarfile" value="floreantpos.jar"/>
-	<property name="app.name" value="floreantpos"/>
+	<property name="dist.dir" value="${dist.base}/casbahpos"/>
+	<property name="jarfile" value="casbahpos.jar"/>
+	<property name="app.name" value="casbahpos"/>
 	<property name="app.version" value="1.0_2"/>
 	<property name="app.file" value="${dist.base}/${app.name}-${app.version}.zip"/>
 

@@ -65,7 +65,7 @@ public class Application {
 	public final static String VERSION = "1.0_2";
 
 	private Application() {
-		applicationIcon = new ImageIcon(getClass().getResource("/icons/icon.png"));
+		applicationIcon = new ImageIcon(getClass().getResource("/icons/casbah-icon.png"));
 		posWindow = new PosWindow();
 		posWindow.setGlassPaneVisible(true);
 		posWindow.setTitle(getTitle());
@@ -290,7 +290,7 @@ public class Application {
 	}
 
 	public static String getTitle() {
-		return "Floreant POS - Version " + VERSION;
+		return "Casbah POS - Version " + VERSION;
 	}
 
 	public static ImageIcon getApplicationIcon() {

@@ -1,8 +1,8 @@
 <launch4jConfig>
   <dontWrapJar>true</dontWrapJar>
   <headerType>0</headerType>
-  <jar>mds-pos.jar</jar>
-  <outfile>D:\projects\mds-pos\florentpos.exe</outfile>
+  <jar>casbahpos.jar</jar>
+  <outfile>casbahpos.exe</outfile>
   <errTitle></errTitle>
   <jarArgs></jarArgs>
   <chdir>.</chdir>

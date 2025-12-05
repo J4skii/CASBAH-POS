@@ -88,7 +88,7 @@ public class SchemaManager {
 
 			Restaurant restaurant = new Restaurant();
 			restaurant.setId(1);
-			restaurant.setName("Floreant Restaurant");
+			restaurant.setName("Casbah Restaurant");
 			restaurant.setAddressLine1("addressLine1");
 			restaurant.setAddressLine2("addressLine2");
 			dao.saveOrUpdate(restaurant);

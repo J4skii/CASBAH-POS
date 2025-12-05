@@ -32,7 +32,7 @@ public class LoginScreen extends JPanel {
 	public LoginScreen() {
 		setLayout(new MigLayout("ins 20 10 20 10, fill","[fill,growprio 100,grow][]",""));
 		
-		imageComponent = new JLabel(IconFactory.getIcon("florent-pos.png"));
+		imageComponent = new JLabel(IconFactory.getIcon("casbah-logo.png"));
 		imageComponent.setBorder(new EtchedBorder());
 		
 		add(imageComponent, "spany,grow,flowx");
