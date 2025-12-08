@@ -7,11 +7,17 @@
 	<property name="app.name" value="casbahpos"/>
 	<property name="app.version" value="1.0_2"/>
 	<property name="app.file" value="${dist.base}/${app.name}-${app.version}.zip"/>
+	<property name="java.release" value="21"/>
 
 	<target name="compile">
 		<mkdir dir="${out.dir}"/>
 		
-		<javac srcdir="${src.dir}" destdir="${out.dir}" source="1.5" target="1.5">
+		<javac srcdir="${src.dir}"
+			   destdir="${out.dir}"
+			   release="${java.release}"
+			   encoding="UTF-8"
+			   includeantruntime="false"
+			   fork="true">
 			<classpath>
 				<fileset dir="lib">
 					<include name="**/*.jar" />
