@@ -1,0 +1,12 @@
+# Build and packaging artifacts
+antbin/
+bin/
+dist/
+target/
+data/
+lib/derbyshared.jar
+packaging/windows/output/
+packaging/windows/.work/
+*.msi
+*.exe
+*.log

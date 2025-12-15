@@ -12,6 +12,7 @@
 	<target name="compile">
 		<mkdir dir="${out.dir}"/>
 		
+		<record name="${out.dir}/compile.log" action="start"/>
 		<javac srcdir="${src.dir}"
 			   destdir="${out.dir}"
 			   release="${java.release}"
@@ -24,6 +25,7 @@
 				</fileset>
 			</classpath>
 		</javac>
+		<record name="${out.dir}/compile.log" action="stop"/>
 		
 		<copy todir="${out.dir}">
 			<fileset dir="${src.dir}">

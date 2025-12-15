@@ -486,6 +486,10 @@ public class PosPrintService {
 		Worker.post(job);
 	}
 
+	public static void printToKitchen(final Ticket ticket) throws Exception {
+		printToKitcken(ticket);
+	}
+
 	public static void printVoidInfo(Ticket ticket) throws Exception {
 		PosPrinter posPrinter = null;
 		try {

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.floreantpos</groupId>
+    <artifactId>casbahpos</artifactId>
+    <version>1.0.2-java21</version>
+    <packaging>pom</packaging>
+
+    <name>CASBAH POS</name>
+    <description>Maven front-end that orchestrates the legacy Ant build for CASBAH POS.</description>
+    <url>https://github.com/J4skii/CASBAH-POS</url>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+    </properties>
+
+    <build>
+        <defaultGoal>package</defaultGoal>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>ant-compile</id>
+                        <phase>compile</phase>
+                        <configuration>
+                            <target>
+                                <ant antfile="${project.basedir}/build.xml"
+                                     target="compile"
+                                     inheritRefs="true"
+                                     inheritAll="true" />
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>ant-dist</id>
+                        <phase>package</phase>
+                        <configuration>
+                            <target>
+                                <ant antfile="${project.basedir}/build.xml"
+                                     target="dist"
+                                     inheritRefs="true"
+                                     inheritAll="true" />
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
