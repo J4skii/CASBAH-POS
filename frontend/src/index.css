@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-gray-100 text-gray-900;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Prevent accidental text selection on POS tap targets */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+}
