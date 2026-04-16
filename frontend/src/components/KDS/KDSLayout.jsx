@@ -35,12 +35,19 @@ export default function KDSLayout() {
 
   async function loadActive() {
     try {
-      const { data } = await api.get(`/orders/${user.location_id}?status=paid`)
+      // Fetch paid + preparing orders with their line items
+      const [paid, preparing] = await Promise.all([
+        api.get(`/orders/${user.location_id}?status=paid&include_items=true`),
+        api.get(`/orders/${user.location_id}?status=preparing&include_items=true`)
+      ])
+      const combined = [...paid.data, ...preparing.data].sort(
+        (a, b) => new Date(a.created_at) - new Date(b.created_at)
+      )
       setOrders(
-        data.map((o) => ({
+        combined.map((o) => ({
           order_id:     o.id,
           order_number: o.order_number,
-          items:        [],
+          items:        o.items ?? [],
           notes:        o.notes,
           created_at:   o.created_at
         }))

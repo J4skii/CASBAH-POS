@@ -46,6 +46,18 @@ const io = new Server(app.server, {
 // Make io accessible inside route handlers via app.io
 app.decorate('io', io)
 
+// Verify JWT on every socket connection
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token
+  if (!token) return next(new Error('Unauthorised'))
+  try {
+    socket.user = app.jwt.verify(token)
+    next()
+  } catch {
+    next(new Error('Unauthorised'))
+  }
+})
+
 io.on('connection', (socket) => {
   app.log.info(`KDS connected: ${socket.id}`)
 

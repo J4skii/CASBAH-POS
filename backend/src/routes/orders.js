@@ -88,10 +88,10 @@ export async function orderRoutes(app) {
   // ── List orders for location ──────────────────────────────────
   app.get('/orders/:location_id', { onRequest: [authenticate] }, async (req, reply) => {
     const { location_id } = req.params
-    const { date, status } = req.query
+    const { date, status, include_items } = req.query
 
     try {
-      return await sql`
+      const orders = await sql`
         SELECT o.*, u.username as staff_name
         FROM orders o
         JOIN users u ON o.staff_id = u.id
@@ -101,6 +101,24 @@ export async function orderRoutes(app) {
         ORDER BY o.created_at DESC
         LIMIT 200
       `
+
+      // KDS needs line items — fetch them in one query and merge
+      if (include_items === 'true' && orders.length > 0) {
+        const ids = orders.map((o) => o.id)
+        const items = await sql`
+          SELECT order_id, item_name as name, quantity, modifiers
+          FROM order_items
+          WHERE order_id = ANY(${ids})
+        `
+        const itemMap = items.reduce((acc, i) => {
+          if (!acc[i.order_id]) acc[i.order_id] = []
+          acc[i.order_id].push(i)
+          return acc
+        }, {})
+        return orders.map((o) => ({ ...o, items: itemMap[o.id] ?? [] }))
+      }
+
+      return orders
     } catch (err) {
       app.log.error(err)
       return reply.status(500).send({ error: 'Failed to fetch orders' })

@@ -13,12 +13,31 @@ const METHODS = [
 
 export default function PaymentModal({ onClose }) {
   const { current_order, completeSale } = useOrderStore()
-  const [selected,    setSelected]    = useState(null)  // which method chosen
+  const [selected,    setSelected]    = useState(null)
   const [cashInput,   setCashInput]   = useState('')
   const [processing,  setProcessing]  = useState(false)
   const [result,      setResult]      = useState(null)
 
   const user = JSON.parse(localStorage.getItem('mojatill_user') ?? '{}')
+
+  // ── Keyboard shortcuts ────────────────────────────────────────
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (processing || result) return
+      if (e.key === 'Escape') { if (!selected) onClose(); else setSelected(null); return }
+      if (selected) {
+        // Enter confirms cash payment
+        if (e.key === 'Enter' && selected === 'cash') { e.preventDefault(); handleCash(); return }
+        return
+      }
+      if (e.key === 'F1') { e.preventDefault(); setSelected('cash') }
+      if (e.key === 'F2') { e.preventDefault(); handleYoco() }
+      if (e.key === 'F3') { e.preventDefault(); setSelected('snapscan') }
+      if (e.key === 'F4') { e.preventDefault(); setSelected('zapper') }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [selected, processing, result, cashInput])
   const { total_cents } = current_order
 
   const cashCents  = cashInput ? randsToCents(cashInput) : 0
@@ -33,6 +52,12 @@ export default function PaymentModal({ onClose }) {
       setResult({ change: cashTendered ? changeCents : null })
       syncEngine.syncAll()
     }
+  }
+
+  // ── Cash confirm (called by button AND Enter key) ────────────
+  function handleCash() {
+    if (cashCents < total_cents || processing) return
+    finish('cash', cashCents)
   }
 
   // ── Yoco SDK popup ────────────────────────────────────────────
@@ -148,7 +173,7 @@ export default function PaymentModal({ onClose }) {
               Back
             </button>
             <button
-              onClick={() => finish('cash', cashCents)}
+              onClick={handleCash}
               disabled={cashCents < total_cents || processing}
               className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-lg hover:bg-green-700 disabled:opacity-50"
             >
