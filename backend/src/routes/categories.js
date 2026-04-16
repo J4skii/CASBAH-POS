@@ -101,6 +101,30 @@ export async function categoryRoutes(app) {
     }
   })
 
+  // ── Update category (manager+) ───────────────────────────────
+  app.patch('/categories/:category_id', { onRequest: [authenticate] }, async (req, reply) => {
+    if (!['manager', 'owner'].includes(req.user.role)) {
+      return reply.status(403).send({ error: 'Insufficient permissions' })
+    }
+    const { name, colour, sort_order, active } = req.body ?? {}
+    try {
+      const [updated] = await sql`
+        UPDATE categories SET
+          name       = COALESCE(${name       ?? null}, name),
+          colour     = COALESCE(${colour     ?? null}, colour),
+          sort_order = COALESCE(${sort_order ?? null}, sort_order),
+          active     = COALESCE(${active     ?? null}, active)
+        WHERE id = ${req.params.category_id}
+        RETURNING *
+      `
+      if (!updated) return reply.status(404).send({ error: 'Category not found' })
+      return updated
+    } catch (err) {
+      app.log.error(err)
+      return reply.status(500).send({ error: 'Failed to update category' })
+    }
+  })
+
   // ── Update item (manager+) ────────────────────────────────────
   app.patch('/items/:item_id', { onRequest: [authenticate] }, async (req, reply) => {
     if (!['manager', 'owner'].includes(req.user.role)) {
@@ -123,6 +147,31 @@ export async function categoryRoutes(app) {
     } catch (err) {
       app.log.error(err)
       return reply.status(500).send({ error: 'Failed to update item' })
+    }
+  })
+
+  // ── Toggle inventory tracking on an item (manager+) ──────────
+  app.post('/items/:item_id/toggle-inventory', { onRequest: [authenticate] }, async (req, reply) => {
+    if (!['manager', 'owner'].includes(req.user.role)) {
+      return reply.status(403).send({ error: 'Insufficient permissions' })
+    }
+    try {
+      const [item] = await sql`
+        UPDATE items SET track_inventory = NOT track_inventory
+        WHERE id = ${req.params.item_id} RETURNING *
+      `
+      if (!item) return reply.status(404).send({ error: 'Item not found' })
+      if (item.track_inventory) {
+        await sql`
+          INSERT INTO inventory (location_id, item_id, quantity)
+          VALUES (${req.user.location_id}, ${item.id}, 0)
+          ON CONFLICT (location_id, item_id) DO NOTHING
+        `
+      }
+      return item
+    } catch (err) {
+      app.log.error(err)
+      return reply.status(500).send({ error: 'Failed to toggle inventory tracking' })
     }
   })
 }

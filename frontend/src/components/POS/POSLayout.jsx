@@ -5,14 +5,26 @@ import ItemSelector from './ItemSelector.jsx'
 import Cart from './Cart.jsx'
 import PaymentModal from './PaymentModal.jsx'
 import Dashboard from '../Admin/Dashboard.jsx'
+import MenuManager from '../Admin/MenuManager.jsx'
+import InventoryManager from '../Admin/InventoryManager.jsx'
+import StaffManager from '../Admin/StaffManager.jsx'
+import LocationSettings from '../Admin/LocationSettings.jsx'
 import SyncStatus from '../shared/SyncStatus.jsx'
+
+const ADMIN_TABS = [
+  { id: 'dashboard', label: 'Dashboard', roles: ['manager', 'owner'] },
+  { id: 'menu',      label: 'Menu',      roles: ['manager', 'owner'] },
+  { id: 'inventory', label: 'Inventory', roles: ['manager', 'owner'] },
+  { id: 'staff',     label: 'Staff',     roles: ['manager', 'owner'] },
+  { id: 'settings',  label: 'Settings',  roles: ['owner'] }
+]
 
 export default function POSLayout() {
   const { user, logout } = useAuthStore()
   const [paymentOpen, setPaymentOpen] = useState(false)
-  const [view,        setView]        = useState('pos') // 'pos' | 'dashboard'
+  const [view,        setView]        = useState('pos')
 
-  const isManager = ['manager', 'owner'].includes(user.role)
+  const visibleTabs = ADMIN_TABS.filter((t) => t.roles.includes(user.role))
 
   useEffect(() => {
     syncEngine.startPeriodicSync()
@@ -22,53 +34,71 @@ export default function POSLayout() {
   return (
     <div className="flex flex-col h-screen bg-gray-100 no-select">
       {/* ── Header ──────────────────────────────────────────────── */}
-      <header className="bg-brand-700 text-white px-4 py-2 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <span className="font-bold text-lg">MojaTill</span>
-          {isManager && (
-            <div className="flex gap-1 text-sm">
-              <button
-                onClick={() => setView('pos')}
-                className={`px-3 py-1 rounded transition-colors ${view === 'pos' ? 'bg-brand-500' : 'hover:bg-brand-600'}`}
-              >
-                Till
-              </button>
-              <button
-                onClick={() => setView('dashboard')}
-                className={`px-3 py-1 rounded transition-colors ${view === 'dashboard' ? 'bg-brand-500' : 'hover:bg-brand-600'}`}
-              >
-                Dashboard
-              </button>
-            </div>
-          )}
+      <header className="bg-brand-700 text-white px-4 py-0 flex items-center justify-between flex-shrink-0 h-12">
+        {/* Left: logo + nav tabs */}
+        <div className="flex items-center gap-1 h-full">
+          <span className="font-bold text-base mr-3">MojaTill</span>
+
+          {/* Till tab — always visible */}
+          <NavTab active={view === 'pos'} onClick={() => setView('pos')}>
+            Till
+          </NavTab>
+
+          {/* Admin tabs */}
+          {visibleTabs.map((tab) => (
+            <NavTab key={tab.id} active={view === tab.id} onClick={() => setView(tab.id)}>
+              {tab.label}
+            </NavTab>
+          ))}
         </div>
 
-        <SyncStatus />
-
-        <div className="flex items-center gap-3 text-sm">
-          <span className="opacity-70">{user.username}</span>
-          <button
-            onClick={logout}
-            className="bg-brand-800 hover:bg-brand-900 px-3 py-1 rounded text-xs transition-colors"
-          >
-            Sign Out
-          </button>
+        {/* Right: sync + user */}
+        <div className="flex items-center gap-4">
+          <SyncStatus />
+          <div className="flex items-center gap-2 text-sm">
+            <span className="opacity-70 text-xs">{user.username}</span>
+            <button
+              onClick={logout}
+              className="bg-brand-800 hover:bg-brand-900 px-2 py-1 rounded text-xs transition-colors"
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* ── Main ────────────────────────────────────────────────── */}
+      {/* ── Main content ────────────────────────────────────────── */}
       {view === 'pos' ? (
         <div className="flex flex-1 overflow-hidden">
           <ItemSelector />
           <Cart onPay={() => setPaymentOpen(true)} />
         </div>
       ) : (
-        <div className="flex-1 overflow-auto">
-          <Dashboard />
+        <div className="flex-1 overflow-auto bg-gray-50">
+          {view === 'dashboard' && <Dashboard />}
+          {view === 'menu'      && <MenuManager />}
+          {view === 'inventory' && <InventoryManager />}
+          {view === 'staff'     && <StaffManager />}
+          {view === 'settings'  && <LocationSettings />}
         </div>
       )}
 
       {paymentOpen && <PaymentModal onClose={() => setPaymentOpen(false)} />}
     </div>
+  )
+}
+
+function NavTab({ active, onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`h-full px-4 text-sm font-medium transition-colors border-b-2 ${
+        active
+          ? 'border-white text-white'
+          : 'border-transparent text-white/60 hover:text-white/90'
+      }`}
+    >
+      {children}
+    </button>
   )
 }
