@@ -21,7 +21,7 @@ export async function reportRoutes(app) {
         FROM orders
         WHERE location_id = ${req.params.location_id}
           AND status != 'voided'
-          AND DATE(created_at AT TIME ZONE ${TZ}) = CURRENT_DATE AT TIME ZONE ${TZ}
+          AND DATE(created_at AT TIME ZONE ${TZ}) = (NOW() AT TIME ZONE ${TZ})::date
       `
       return row
     } catch (err) {
@@ -96,7 +96,7 @@ export async function reportRoutes(app) {
         FROM orders
         WHERE location_id = ${req.params.location_id}
           AND status != 'voided'
-          AND DATE(created_at AT TIME ZONE ${TZ}) = CURRENT_DATE AT TIME ZONE ${TZ}
+          AND DATE(created_at AT TIME ZONE ${TZ}) = (NOW() AT TIME ZONE ${TZ})::date
         GROUP BY EXTRACT(HOUR FROM created_at AT TIME ZONE ${TZ})
         ORDER BY hour
       `

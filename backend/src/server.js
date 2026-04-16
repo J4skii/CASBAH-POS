@@ -11,6 +11,7 @@ import { categoryRoutes } from './routes/categories.js'
 import { inventoryRoutes } from './routes/inventory.js'
 import { reportRoutes } from './routes/reports.js'
 import { staffRoutes } from './routes/staff.js'
+import { locationRoutes } from './routes/locations.js'
 
 dotenv.config()
 
@@ -83,6 +84,7 @@ await app.register(categoryRoutes,  { prefix: '/api' })
 await app.register(inventoryRoutes, { prefix: '/api' })
 await app.register(reportRoutes,    { prefix: '/api' })
 await app.register(staffRoutes,     { prefix: '/api' })
+await app.register(locationRoutes,  { prefix: '/api' })
 
 // ── Global error handler ──────────────────────────────────────────
 app.setErrorHandler((error, _request, reply) => {
