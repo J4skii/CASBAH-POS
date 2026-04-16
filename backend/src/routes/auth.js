@@ -14,7 +14,8 @@ export async function authRoutes(app) {
     try {
       const users = await sql`
         SELECT u.id, u.username, u.password_hash, u.role, u.location_id,
-               l.yoco_public_key, l.snap_scan_merchant_id, l.zapper_merchant_id, l.name as location_name
+               l.yoco_public_key, l.snap_scan_merchant_id, l.zapper_merchant_id,
+               l.name as location_name, l.address, l.city, l.phone, l.vat_number
         FROM users u
         JOIN locations l ON u.location_id = l.id
         WHERE u.username = ${username.toLowerCase()} AND u.active = true
@@ -42,6 +43,10 @@ export async function authRoutes(app) {
         role:                  user.role,
         location_id:           user.location_id,
         location_name:         user.location_name,
+        address:               user.address,
+        city:                  user.city,
+        phone:                 user.phone,
+        vat_number:            user.vat_number,
         yoco_public_key:       user.yoco_public_key,
         snap_scan_merchant_id: user.snap_scan_merchant_id,
         zapper_merchant_id:    user.zapper_merchant_id,

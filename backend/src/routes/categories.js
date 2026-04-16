@@ -75,16 +75,17 @@ export async function categoryRoutes(app) {
     if (!['manager', 'owner'].includes(req.user.role)) {
       return reply.status(403).send({ error: 'Insufficient permissions' })
     }
-    const { category_id, name, description, price_cents, sort_order, track_inventory } = req.body ?? {}
+    const { category_id, name, description, price_cents, sort_order, track_inventory, modifiers_template } = req.body ?? {}
     if (!category_id || !name || price_cents == null) {
       return reply.status(400).send({ error: 'category_id, name and price_cents required' })
     }
 
     try {
       const [item] = await sql`
-        INSERT INTO items (location_id, category_id, name, description, price_cents, sort_order, track_inventory)
+        INSERT INTO items (location_id, category_id, name, description, price_cents, sort_order, track_inventory, modifiers_template)
         VALUES (${req.user.location_id}, ${category_id}, ${name}, ${description ?? null},
-                ${price_cents}, ${sort_order ?? 0}, ${track_inventory ?? false})
+                ${price_cents}, ${sort_order ?? 0}, ${track_inventory ?? false},
+                ${JSON.stringify(modifiers_template ?? [])})
         RETURNING *
       `
       if (track_inventory) {
@@ -130,15 +131,17 @@ export async function categoryRoutes(app) {
     if (!['manager', 'owner'].includes(req.user.role)) {
       return reply.status(403).send({ error: 'Insufficient permissions' })
     }
-    const { name, description, price_cents, sort_order, active } = req.body ?? {}
+    const { name, description, price_cents, sort_order, active, modifiers_template } = req.body ?? {}
+    const modJson = modifiers_template !== undefined ? JSON.stringify(modifiers_template) : null
     try {
       const [updated] = await sql`
         UPDATE items SET
-          name        = COALESCE(${name        ?? null}, name),
-          description = COALESCE(${description ?? null}, description),
-          price_cents = COALESCE(${price_cents ?? null}, price_cents),
-          sort_order  = COALESCE(${sort_order  ?? null}, sort_order),
-          active      = COALESCE(${active      ?? null}, active)
+          name               = COALESCE(${name        ?? null}, name),
+          description        = COALESCE(${description ?? null}, description),
+          price_cents        = COALESCE(${price_cents ?? null}, price_cents),
+          sort_order         = COALESCE(${sort_order  ?? null}, sort_order),
+          active             = COALESCE(${active      ?? null}, active),
+          modifiers_template = COALESCE(${modJson}, modifiers_template)
         WHERE id = ${req.params.item_id}
         RETURNING *
       `

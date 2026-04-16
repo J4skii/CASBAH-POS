@@ -11,6 +11,9 @@ export async function orderRoutes(app) {
       return reply.status(400).send({ error: 'Invalid order format' })
     }
 
+    const discount_cents = order.discount_cents ?? 0
+    const order_type     = order.order_type ?? 'dine_in'
+
     try {
       const result = await sql.begin(async (tx) => {
         // Check inventory for tracked items
@@ -30,10 +33,12 @@ export async function orderRoutes(app) {
         const [inserted] = await tx`
           INSERT INTO orders
             (id, location_id, staff_id, subtotal_cents, vat_cents, total_cents,
+             discount_cents, discount_note, order_type,
              payment_method, cash_tendered_cents, change_cents, status, terminal_id, notes)
           VALUES
             (${order.id}, ${location_id}, ${user_id},
              ${order.subtotal_cents}, ${order.vat_cents}, ${order.total_cents},
+             ${discount_cents}, ${order.discount_note ?? null}, ${order_type},
              ${order.payment_method},
              ${order.cash_tendered_cents ?? null},
              ${order.change_cents ?? null},
@@ -102,11 +107,10 @@ export async function orderRoutes(app) {
         LIMIT 200
       `
 
-      // KDS needs line items — fetch them in one query and merge
       if (include_items === 'true' && orders.length > 0) {
         const ids = orders.map((o) => o.id)
         const items = await sql`
-          SELECT order_id, item_name as name, quantity, modifiers
+          SELECT order_id, item_name as name, quantity, unit_price_cents, modifiers
           FROM order_items
           WHERE order_id = ANY(${ids})
         `
@@ -128,16 +132,26 @@ export async function orderRoutes(app) {
   // ── Update order status (KDS / manager) ──────────────────────
   app.patch('/orders/:order_id/status', { onRequest: [authenticate] }, async (req, reply) => {
     const { order_id } = req.params
-    const { status, location_id } = req.body
+    const { status, location_id, void_reason } = req.body
 
     const valid = ['preparing', 'ready', 'delivered', 'voided']
     if (!valid.includes(status)) {
       return reply.status(400).send({ error: 'Invalid status' })
     }
 
+    // Void requires manager or owner
+    if (status === 'voided' && !['manager', 'owner'].includes(req.user.role)) {
+      return reply.status(403).send({ error: 'Manager or owner required to void orders' })
+    }
+
     try {
       const [updated] = await sql`
-        UPDATE orders SET status = ${status} WHERE id = ${order_id} RETURNING *
+        UPDATE orders
+        SET
+          status      = ${status},
+          void_reason = COALESCE(${void_reason ?? null}, void_reason)
+        WHERE id = ${order_id}
+        RETURNING *
       `
       if (!updated) return reply.status(404).send({ error: 'Order not found' })
 

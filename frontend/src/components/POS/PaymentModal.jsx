@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { useOrderStore } from '../../store/orderStore.js'
 import { formatZAR, randsToCents } from '../../lib/currency.js'
 import { syncEngine } from '../../db/sync.js'
+import { printReceipt } from '../shared/Receipt.jsx'
 
 const METHODS = [
   { id: 'cash',      label: 'Cash',         icon: '💵', shortcut: 'F1', colour: 'bg-green-600 hover:bg-green-700' },
@@ -16,7 +17,7 @@ export default function PaymentModal({ onClose }) {
   const [selected,    setSelected]    = useState(null)
   const [cashInput,   setCashInput]   = useState('')
   const [processing,  setProcessing]  = useState(false)
-  const [result,      setResult]      = useState(null)
+  const [result,      setResult]      = useState(null)  // { change, order }
 
   const user = JSON.parse(localStorage.getItem('mojatill_user') ?? '{}')
 
@@ -26,7 +27,6 @@ export default function PaymentModal({ onClose }) {
       if (processing || result) return
       if (e.key === 'Escape') { if (!selected) onClose(); else setSelected(null); return }
       if (selected) {
-        // Enter confirms cash payment
         if (e.key === 'Enter' && selected === 'cash') { e.preventDefault(); handleCash(); return }
         return
       }
@@ -38,9 +38,10 @@ export default function PaymentModal({ onClose }) {
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
   }, [selected, processing, result, cashInput])
+
   const { total_cents } = current_order
 
-  const cashCents  = cashInput ? randsToCents(cashInput) : 0
+  const cashCents   = cashInput ? randsToCents(cashInput) : 0
   const changeCents = cashCents - total_cents
 
   // ── Finalise any payment ──────────────────────────────────────
@@ -49,12 +50,15 @@ export default function PaymentModal({ onClose }) {
     const res = await completeSale(method, cashTendered)
     setProcessing(false)
     if (res.success) {
-      setResult({ change: cashTendered ? changeCents : null })
+      setResult({
+        change: cashTendered ? changeCents : null,
+        order:  res.order
+      })
       syncEngine.syncAll()
     }
   }
 
-  // ── Cash confirm (called by button AND Enter key) ────────────
+  // ── Cash confirm ──────────────────────────────────────────────
   function handleCash() {
     if (cashCents < total_cents || processing) return
     finish('cash', cashCents)
@@ -83,7 +87,18 @@ export default function PaymentModal({ onClose }) {
     })
   }
 
-  // ── QR payment URLs ───────────────────────────────────────────
+  // ── Print receipt helper ──────────────────────────────────────
+  function handlePrint(order) {
+    printReceipt(order ?? {}, {
+      name:       user.location_name,
+      vat_number: user.vat_number,
+      address:    user.address,
+      city:       user.city,
+      phone:      user.phone
+    })
+  }
+
+  // ── QR URLs ───────────────────────────────────────────────────
   const snapUrl   = `https://pos.snapscan.io/qr/${user.snap_scan_merchant_id ?? 'SETUP_REQUIRED'}?amount=${total_cents}&strictAmountCheck=true`
   const zapperUrl = `https://zapper.com/qr?merchant=${user.zapper_merchant_id ?? 'SETUP_REQUIRED'}&amount=${total_cents / 100}`
 
@@ -100,12 +115,20 @@ export default function PaymentModal({ onClose }) {
               <div className="text-4xl font-bold text-brand-700">{formatZAR(result.change)}</div>
             </div>
           )}
-          <button
-            onClick={onClose}
-            className="w-full py-3 bg-brand-600 text-white rounded-xl font-bold text-lg hover:bg-brand-700 mt-4"
-          >
-            Next Order
-          </button>
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={() => handlePrint(result.order)}
+              className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-50"
+            >
+              Print Receipt
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 bg-brand-600 text-white rounded-xl font-bold text-lg hover:bg-brand-700"
+            >
+              Next Order
+            </button>
+          </div>
         </div>
       </Overlay>
     )

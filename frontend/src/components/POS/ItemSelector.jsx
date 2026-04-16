@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react'
 import { db } from '../../db/schema.js'
 import { useOrderStore } from '../../store/orderStore.js'
 import { formatZAR } from '../../lib/currency.js'
+import ModifiersModal from './ModifiersModal.jsx'
 import api from '../../api/client.js'
 
 export default function ItemSelector() {
-  const [categories,   setCategories]   = useState([])
-  const [items,        setItems]        = useState([])
-  const [selectedCat,  setSelectedCat]  = useState(null)
-  const [loading,      setLoading]      = useState(true)
+  const [categories,    setCategories]    = useState([])
+  const [items,         setItems]         = useState([])
+  const [selectedCat,   setSelectedCat]   = useState(null)
+  const [loading,       setLoading]       = useState(true)
+  const [modifierItem,  setModifierItem]  = useState(null)  // item awaiting modifier selection
 
   const addItem    = useOrderStore((s) => s.addItem)
   const { location_id } = JSON.parse(localStorage.getItem('mojatill_user') ?? '{}')
@@ -23,7 +25,6 @@ export default function ItemSelector() {
       setCategories(data)
       if (data.length > 0) setSelectedCat(data[0].id)
     } catch {
-      // Fall back to local cache when offline
       const local = await db.categories.toArray()
       setCategories(local)
       if (local.length > 0) setSelectedCat(local[0].id)
@@ -41,6 +42,23 @@ export default function ItemSelector() {
       const local = await db.items.where('category_id').equals(categoryId).toArray()
       setItems(local)
     }
+  }
+
+  function handleItemTap(item) {
+    if (item.modifiers_template?.length > 0) {
+      setModifierItem(item)
+    } else {
+      addItem(item)
+    }
+  }
+
+  function handleModifierConfirm({ modifiers, addon_cents }) {
+    const itemWithAddon = {
+      ...modifierItem,
+      price_cents: modifierItem.price_cents + addon_cents
+    }
+    addItem(itemWithAddon, 1, modifiers)
+    setModifierItem(null)
   }
 
   if (loading) {
@@ -80,11 +98,12 @@ export default function ItemSelector() {
             {items.map((item) => {
               const outOfStock = item.track_inventory && item.current_stock === 0
               const lowStock   = item.track_inventory && item.current_stock > 0 && item.current_stock <= (item.low_stock_alert ?? 5)
+              const hasModifiers = item.modifiers_template?.length > 0
 
               return (
                 <button
                   key={item.id}
-                  onClick={() => !outOfStock && addItem(item)}
+                  onClick={() => !outOfStock && handleItemTap(item)}
                   disabled={outOfStock}
                   className={`p-4 rounded-xl text-left transition-all active:scale-95 border ${
                     outOfStock
@@ -94,14 +113,24 @@ export default function ItemSelector() {
                 >
                   <div className="font-semibold text-sm text-gray-900 leading-tight">{item.name}</div>
                   <div className="text-brand-700 font-bold text-base mt-1">{formatZAR(item.price_cents)}</div>
-                  {outOfStock && <div className="text-xs text-red-400 mt-1">Out of stock</div>}
-                  {lowStock   && <div className="text-xs text-amber-500 mt-1">{item.current_stock} left</div>}
+                  {outOfStock   && <div className="text-xs text-red-400 mt-1">Out of stock</div>}
+                  {lowStock     && <div className="text-xs text-amber-500 mt-1">{item.current_stock} left</div>}
+                  {hasModifiers && !outOfStock && <div className="text-xs text-gray-400 mt-1">Customisable</div>}
                 </button>
               )
             })}
           </div>
         )}
       </div>
+
+      {/* Modifiers modal */}
+      {modifierItem && (
+        <ModifiersModal
+          item={modifierItem}
+          onConfirm={handleModifierConfirm}
+          onClose={() => setModifierItem(null)}
+        />
+      )}
     </div>
   )
 }

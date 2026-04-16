@@ -51,10 +51,14 @@ export default function LocationSettings() {
       setForm(data)
       // Update auth store so PaymentModal picks up new keys immediately
       updateUser({
+        location_name:         data.name,
+        address:               data.address,
+        city:                  data.city,
+        phone:                 data.phone,
+        vat_number:            data.vat_number,
         yoco_public_key:       data.yoco_public_key,
         snap_scan_merchant_id: data.snap_scan_merchant_id,
-        zapper_merchant_id:    data.zapper_merchant_id,
-        location_name:         data.name
+        zapper_merchant_id:    data.zapper_merchant_id
       })
       setSaved(true)
     } catch (e) {
